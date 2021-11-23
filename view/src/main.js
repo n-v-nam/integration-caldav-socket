@@ -7,6 +7,9 @@ import router from './router'
 // Tailwind
 import './assets/css/main.css'
 
+import VeeValidate from "vee-validate";
+Vue.use(VeeValidate)
+
 // Vuex
 import store from './store/store'
 
@@ -22,7 +25,7 @@ Vue.use(Vuesax)
 import GAuth from 'vue-google-oauth2'
 const gAuthOption = {
   clientId: '217858815782-qe36u4q8232qfslg1ut589rc7psdjcio.apps.googleusercontent.com',
-  scope: 'profile email https://www.googleapis.com/auth/contacts.readonly',
+  scope: 'profile email https://www.googleapis.com/auth/contacts.readonly https://www.googleapis.com/auth/gmail.send',
   prompt: 'consent',
   fetch_basic_profile: true,
 }

@@ -4,7 +4,9 @@ import config from '../app.config'
 export var googleService
 export default googleService = {
   authCode,
-  getBasicProfile
+  getBasicProfile,
+  getContact,
+  sendMail
 }
 async function authCode(payload) {
   return await Axios.post(`${config.LOCAL_API_URL}/connection`, payload)
@@ -17,6 +19,24 @@ async function authCode(payload) {
 }
 async function getBasicProfile(payload) {
   return await Axios.post(`${config.ZATO_API_URL}/google/profile`, payload)
+    .then((response) => {
+      return Promise.resolve(response.data)
+    })
+    .catch((error) => {
+      return Promise.reject(error)
+    })
+}
+async function getContact(payload) {
+  return await Axios.post(`${config.ZATO_API_URL}/google/contact`, payload)
+    .then((response) => {
+      return Promise.resolve(response.data.feed.entry)
+    })
+    .catch((error) => {
+      return Promise.reject(error)
+    })
+}
+async function sendMail(payload) {
+  return await Axios.post(`${config.ZATO_API_URL}/google/send`, payload)
     .then((response) => {
       return Promise.resolve(response.data)
     })

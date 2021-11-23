@@ -7,5 +7,6 @@
 
 export default {
   getAccessToken: state => state.accessToken,
-  getBasicProfile: state => state.basicProfile
+  getBasicProfile: state => state.basicProfile,
+  getContact: state => state.contact
 }

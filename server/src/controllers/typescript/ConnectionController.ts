@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 
 const { GENERIC_ERROR } = require('../../helpers/error_helper')
 
-const app = require('../utils/app-utils')
+const app = require('../../utils/app-utils')
 
 const { check } = require('express-validator')
 

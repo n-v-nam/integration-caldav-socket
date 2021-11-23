@@ -60,5 +60,31 @@ export default {
         console.log(error);
         return Promise.reject(error)
       })
+  },
+  getContactGoogle({commit}, payload){
+    return googleService.getContact(payload)
+      .then(response => {
+        const contacts = response.map(contact => {
+          const  name = contact.title.$t
+          const email = contact.gd$email[0].address
+          return {name, email}
+        })
+        commit('setContact', Object.assign({service_code: 'google'}, {contacts: contacts}))
+        return Promise.resolve(contacts)
+      })
+      .catch(error =>{
+        console.log(error);
+        return Promise.reject(error)
+      })
+  },
+  sendMail(commit, payload){
+    return googleService.sendMail(payload)
+      .then(response => {
+        return Promise.resolve(response)
+      })
+      .catch(error =>{
+        console.log(error);
+        return Promise.reject(error)
+      })
   }
 }
