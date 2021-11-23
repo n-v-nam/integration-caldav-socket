@@ -59,14 +59,6 @@ export default {
           text: val.message,
           color: val.type
       });
-    },
-    "localStorage.getItem('token')": async function(val) {
-      if(!val){
-        this.$router.push('/login')
-      }
-      else{
-        this.$store.dispatch('updateUser', 'admin')
-      }
     }
   },
   methods: {

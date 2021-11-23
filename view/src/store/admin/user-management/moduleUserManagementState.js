@@ -12,5 +12,9 @@ export default {
   basicProfile: {
     google: null,
     zalo: null
+  },
+  contact: {
+    google: null,
+    zalo: null
   }
 }
