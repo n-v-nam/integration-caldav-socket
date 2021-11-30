@@ -9,7 +9,7 @@ from zato.server.service import Service
 
 class SendMailGoogle(Service):
 
-    name: 'api.google-send-mail'
+    name: 'google.send-mail'
     def handle(self):
 
         access_token = self.request.payload['access_token']

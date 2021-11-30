@@ -7,12 +7,21 @@ import router from './router'
 // Tailwind
 import './assets/css/main.css'
 
+// Validation
 import VeeValidate from "vee-validate";
 Vue.use(VeeValidate)
 
+// calendar
+import VCalendar from 'v-calendar';
+
+// Use v-calendar & v-date-picker components
+Vue.use(VCalendar, {
+  componentPrefix: 'v'
+})
 // Vuex
 import store from './store/store'
 
+// axios
 import axios from 'axios'
 
 // Vuesax Component Framework

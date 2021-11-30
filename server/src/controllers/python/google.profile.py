@@ -5,7 +5,7 @@ from zato.server.service import Service
 
 class GetProfileGoogle(Service):
 
-    name: 'api.google-user-profile'
+    name: 'google.profile'
     def handle(self):
         self.logger.info(self.request.payload)
         access_token = self.request.payload['access_token']

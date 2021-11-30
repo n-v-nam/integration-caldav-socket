@@ -5,7 +5,7 @@ from zato.server.service import Service
 
 class GetContactsGoogle(Service):
 
-    name: 'api.google-user-contacts'
+    name: 'google.contact'
     def handle(self):
 
         access_token = self.request.payload['access_token']

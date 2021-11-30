@@ -8,5 +8,6 @@
 export default {
   getAccessToken: state => state.accessToken,
   getBasicProfile: state => state.basicProfile,
-  getContact: state => state.contact
+  getContact: state => state.contact,
+  getListEvent: state => state.eventCalendar
 }
