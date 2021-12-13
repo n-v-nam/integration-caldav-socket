@@ -13,6 +13,7 @@
     "base64-arraybuffer": "^1.0.1",
     "core-js": "^3.6.5",
     "material-icons": "^1.10.2",
+    "prismjs": "^1.25.0",
     "randomstring": "^1.2.1",
     "v-calendar": "^2.3.4",
     "vee-validate": "^2.2.15",
@@ -20,7 +21,9 @@
     "vue-google-oauth2": "^1.5.8",
     "vue-msal": "^3.2.0",
     "vue-msal-browser": "^1.0.4",
+    "vue-prism-component": "^2.0.0",
     "vue-router": "^3.0.6",
+    "vue-socket.io": "^3.0.10",
     "vuesax": "github:jd-0001/vuesax",
     "vuex": "^3.6.2"
   },

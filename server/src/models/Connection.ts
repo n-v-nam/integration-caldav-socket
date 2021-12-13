@@ -3,4 +3,5 @@ export interface Connection{
     mst_user_name: number
     mst_service_code: number
     token: string
+    account: string
 }

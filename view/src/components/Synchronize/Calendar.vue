@@ -4,10 +4,10 @@
     <v-calendar class="custom-calendar" :masks="masks" :attributes="attributes" disable-page-swipe is-expanded>
       <template v-slot:day-content="{ day, attributes }">
         <div class="flex flex-col h-full z-10 overflow-hidden">
-          <span :class="{'bg-red-300': day.id == `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`}" class="day-label text-sm text-gray-900 cursor-pointer hover:bg-gray-200" @click="$emit('createEvent', day, 'microsoft')">{{ day.day }}</span>
+          <span :class="{'bg-red-300': day.id == `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`}" class="day-label text-sm text-gray-900 cursor-pointer hover:bg-gray-200" >{{ day.day }}</span>
           <div class="flex-grow overflow-y-auto overflow-x-auto">
-            <p v-for="attr in attributes" :key="attr.key" @click="showEvent(attr.key)" class="cursor-pointer hover:opacity-70 text-xs leading-tight rounded-sm p-1 mt-0 mb-1" :class="attr.customData.class">
-              {{attr.customData.startTime.substring(11, 17) || 'All day:' }} {{ attr.customData.title }}
+            <p v-for="attr in attributes" :key="attr.key" class="cursor-pointer hover:opacity-70 text-xs leading-tight rounded-sm p-1 mt-0 mb-1" :class="attr.customData.class">
+              {{attr.customData.startTime.substring(11, 16) ? 'at ' +   attr.customData.startTime.substring(11, 16) : 'All day:' }} <B>{{ attr.customData.title }}</B>
             </p>
           </div>
         </div>
@@ -50,7 +50,10 @@ export default {
           customData: {
             title: event.summary || '(No summary)',
             class: 'bg-red-500 text-white',
-            startTime: event.start.date || event.start.dateTime
+            startTime: event.start.date || event.start.dateTime,
+            endTime: event.end.date || event.end.dateTime,
+            attendees: event.attendees ? event.attendees.map((contact) => contact.email) : [],
+            description: event.description
           },
           dates: event.start.date || event.start.dateTime,
         }
@@ -62,13 +65,16 @@ export default {
           customData: {
             title: event.subject || '(No summary)',
             class: 'bg-blue-500 text-white',
-            startTime: event.start.date || event.start.dateTime
+            startTime: event.start.date || event.start.dateTime,
+            endTime: event.end.date || event.end.dateTime,
+            attendees: event.attendees ? event.attendees.map((contact) => contact.emailAddress.address) : [],
+            description: event.body.content.replace(/<[^>]*>?/gm, '').trim()
           },
           dates: event.start.date || event.start.dateTime,
         }
         return data
       })
-      return [...listEventMicrosoft, ...listEventGoogle]
+      return [...listEventGoogle, ...listEventMicrosoft ]
     }
   },
   methods: {
@@ -97,10 +103,6 @@ export default {
       console.log(res.token)
       await this.getEventGoogle({ access_token: res.token, calendarId: this.getBasicProfile().google.email })
     },
-    showEvent(key){
-      const listEvent = this.getListEvent().google || []
-      this.$emit('showEvent', listEvent.find(event => event.id == key), 'google')
-    }
     // showEvent(key){
     //   const listEvent = this.getListEvent().microsoft || []
     //   this.$emit('showEvent', listEvent.find(event => event.id == key), 'microsoft')

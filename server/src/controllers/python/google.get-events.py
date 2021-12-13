@@ -6,7 +6,7 @@ from zato.server.service import Service
 class GetCalendarGoogle(Service):
 
     name: 'google.get-events'
-    def handle(self):
+    def handle_POST(self):
 
         access_token = self.request.payload['access_token']
         calendarId = self.request.payload['calendarId']
@@ -19,3 +19,11 @@ class GetCalendarGoogle(Service):
 
         self.response.payload = events.json()
         self.response.status_code = 200
+    
+    def handle_OPTIONS(self):
+
+        # We only allow requests from this particular origin
+        allow_from_name = 'Access-Control-Allow-Origin'        
+        allow_from_value = 'http://localhost:8080'
+
+        self.response.headers[allow_from_name] = allow_from_value

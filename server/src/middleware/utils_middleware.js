@@ -1,7 +1,6 @@
 import { ResponseData } from '../responses/Response'
 
 const { validationResult } = require('express-validator')
-const { UNPROCESSABLE } = require('../helpers/error_helper')
 
 const handleValidationResult = (req, res, next) => {
   const errors = validationResult(req) // Finds the validation errors in this request and wraps them in an object with handy functions
@@ -10,7 +9,7 @@ const handleValidationResult = (req, res, next) => {
 
     const messages = errs.map((item) => item.msg)
     return res
-      .status(UNPROCESSABLE)
+      .status(422)
       .send(new ResponseData(false, messages.join(', '), null))
   }
 

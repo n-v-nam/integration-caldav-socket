@@ -1,3 +1,5 @@
+/** @format */
+
 import Vue from 'vue'
 import App from './App.vue'
 
@@ -8,15 +10,15 @@ import router from './router'
 import './assets/css/main.css'
 
 // Validation
-import VeeValidate from "vee-validate";
+import VeeValidate from 'vee-validate'
 Vue.use(VeeValidate)
 
 // calendar
-import VCalendar from 'v-calendar';
+import VCalendar from 'v-calendar'
 
 // Use v-calendar & v-date-picker components
 Vue.use(VCalendar, {
-  componentPrefix: 'v'
+  componentPrefix: 'v',
 })
 // Vuex
 import store from './store/store'
@@ -39,54 +41,60 @@ const gAuthOption = {
   fetch_basic_profile: true,
 }
 Vue.use(GAuth, gAuthOption)
+// SocketIO
+import VueSocketIO from 'vue-socket.io'
+
+Vue.use(
+  new VueSocketIO({
+    debug: true,
+    connection: 'http://localhost:1337',
+    withCredentials: true,
+  })
+)
 
 Vue.config.productionTip = false
 
 axios.interceptors.request.use(
-  function(config) {
-    if(!store.state.loads) store.dispatch("updateLoading", true);
-    if (!config.noToken) {
-      const token = sessionStorage.getItem("token")
-      if (token && !config.headers.Authorization) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+  function (config) {
+    if (!store.state.silentLoading) store.dispatch('updateLoading', true)
+    const token = localStorage.getItem('token')
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`
     }
-
-    config.headers["X-Requested-With"] = "X" + "MLHttpRequest";
-    return config;
+    return config
   },
-  function(err) {
+  function (err) {
     if (store.state.loading) {
-      store.dispatch("updateLoading", false);
+      store.dispatch('updateLoading', false)
     }
-    return Promise.reject(err);
+    return Promise.reject(err)
   }
-);
+)
 
 axios.interceptors.response.use(
   (response) => {
-    if (response && response.data) {
-        let result = response.data
-        if (result.code) {
-            let code = result.code
-            if (code === 403) {
-                sessionStorage.removeItem('token')
-                window.location.href = 'login'
-            }
-        }
+    if (response) {
+      if (response.status && response.status == 403) {
+        localStorage.removeItem('token')
+        window.location.href = 'login'
+      }
     }
     if (store.state.loading) {
-      store.dispatch("updateLoading", false)
+      store.dispatch('updateLoading', false)
     }
-    return response;
+    return response
   },
-  function(error) {
-    if (store.state.loading) {
-      store.dispatch("updateLoading", false)
+  function (error) {
+    if (error.response.status == 403) {
+      localStorage.removeItem('token')
+      router.push('/login')
     }
-    return Promise.reject(error);
+    if (store.state.loading) {
+      store.dispatch('updateLoading', false)
+    }
+    return Promise.reject(error)
   }
-);
+)
 
 new Vue({
   router,

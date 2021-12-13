@@ -19,12 +19,14 @@ const userDefaults = ''
 
 const state = {
   userDefaults: userDefaults,
+  userId: 1,
   notification: {
     status: false,
     message: null,
     type: null,
   },
-  loading: false
+  loading: false,
+  silentLoading: false
 }
 
 export default state

@@ -8,6 +8,9 @@ const actions = {
   updateLoading({commit}, payload){
     commit('UPDATE_LOADING', payload);
   },
+  updateSilentLoading({commit}, payload){
+    commit('UPDATE_SILENT_LOADING', payload);
+  },
   ////////////////////////////////////////////////
   // SHOW ALERT
   ///////////////////////////////////////////////

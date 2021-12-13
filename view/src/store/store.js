@@ -13,7 +13,7 @@ import state from "./state"
 import getters from "./getters"
 import mutations from "./mutations"
 import actions from "./actions"
-import userManagement from './admin/user-management/moduleUserManagement'
+import userManagement from './user-management/moduleUserManagement'
 
 Vue.use(Vuex)
 

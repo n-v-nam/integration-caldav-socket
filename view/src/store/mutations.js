@@ -14,6 +14,12 @@ const mutations = {
   UPDATE_LOADING(state, payload){
     state.loading = payload;
   },
+  UPDATE_SILENT_LOADING(state, payload){
+    state.silentLoading = payload;
+  },
+  SET_USER_ID(state, payload){
+    state.userId = payload
+  },
 
 ////////////////////////////////////////////////////////
 ////// ALERT

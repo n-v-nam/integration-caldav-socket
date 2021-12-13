@@ -48,7 +48,7 @@
             <vs-col vs-w="2.5">
               <BasicProfileMicrosoft />
             </vs-col>
-            <vs-col class="mt-6 px-2"  vs-w="4.5">
+            <vs-col class="mt-6 px-2" vs-w="4.5">
               <ContactMicrosoft />
             </vs-col>
             <vs-col vs-w="5">
@@ -56,8 +56,9 @@
             </vs-col>
           </div>
         </vs-tab>
-        <vs-tab label="Synchronize">
-          <Calendar/>
+        <vs-tab class="flex justify-around" label="Sync">
+          <Calendar />
+          <Contact />
         </vs-tab>
       </vs-tabs>
     </div>
@@ -99,8 +100,21 @@
         </vs-chips>
       </div>
       <vs-textarea class="mb-2 font-bold" label="Description" v-model="eventDescription" />
+      <div class="my-4">
+        <b>Do you want to send a email to notify for attendees?</b>
+        <span class="text-xs font-light"> (If not, you can compose a message)</span>
+        <div class="flex justify-start mt-2 text-xs">
+          <vs-radio v-model="sendUpdates" vs-value="all">All</vs-radio>
+          <vs-radio class="mx-2" v-model="sendUpdates" vs-value="externalOnly">Non-Google Calendar guests only</vs-radio>
+          <vs-radio v-model="sendUpdates" vs-value="none">None</vs-radio>
+        </div>
+      </div>
+      <div class="flex items-center mb-4">
+        <input type="checkbox" class="mr-2" v-model="isSMS" />
+        <b>Send a SMS for attendees? (if having phone number)</b>
+      </div>
       <div class="flex justify-end">
-        <vs-button color="danger" class="text-xs" @click="deleteEvent" icon="delete_forever">Delete</vs-button>
+        <vs-button v-show="isShowEvent" color="danger" class="text-xs" @click="deleteEvent" icon="delete_forever">Delete</vs-button>
         <vs-button
           color="success"
           :disabled="errors.first('start') || !dateTimeStart || !dateTimeEnd || errors.first('end') || dateTimeEnd <= dateTimeStart"
@@ -120,6 +134,7 @@ import { mapActions, mapGetters } from 'vuex'
 import randomstring from 'randomstring'
 import { encode as base64encode } from 'base64-arraybuffer'
 import Calendar from './Synchronize/Calendar.vue'
+import Contact from './Synchronize/Contact.vue'
 import CalendarGoogle from './Google/Calendar.vue'
 import CalendarMicrosoft from './Microsoft/Calendar.vue'
 import ContactGoogle from './Google/Contact.vue'
@@ -130,7 +145,7 @@ import BasicProfileMicrosoft from './Microsoft/BasicProfile.vue'
 
 export default {
   name: 'Home',
-  components: { Calendar, CalendarGoogle, CalendarMicrosoft, ContactGoogle, BasicProfileGoogle, BasicProfileZalo, BasicProfileMicrosoft, ContactMicrosoft },
+  components: { Calendar, Contact, CalendarGoogle, CalendarMicrosoft, ContactGoogle, BasicProfileGoogle, BasicProfileZalo, BasicProfileMicrosoft, ContactMicrosoft },
   data() {
     return {
       tokenGoogle: null,
@@ -151,6 +166,8 @@ export default {
       dateTimeEnd: null,
       eventAttendees: [],
       eventDescription: null,
+      sendUpdates: 'none',
+      isSMS: false,
       eventId: null,
     }
   },
@@ -180,6 +197,7 @@ export default {
     ...mapActions({
       createConnect: 'userManagement/addConnection',
       getListConnection: 'userManagement/getListConnection',
+      getListNotification: 'userManagement/getListNotification',
       getAccessToken: 'userManagement/getAccessToken',
       sendMail: 'userManagement/sendMail',
       createEventGoogle: 'userManagement/createEventGoogle',
@@ -192,6 +210,8 @@ export default {
       deleteEventIdMicrosoft: 'userManagement/deleteEventMicrosoft',
       requestToken: 'userManagement/requestToken',
       requestTokenMicrosoft: 'userManagement/requestTokenMicrosoft',
+      sendSMS: 'userManagement/sendSMS',
+      getProfile: 'userManagement/getProfile',
     }),
     ...mapGetters({
       getBasicProfile: 'userManagement/getBasicProfile',
@@ -260,7 +280,7 @@ export default {
       const code_verifier = randomstring.generate(44)
       localStorage.setItem('code_verifier', code_verifier)
       await this.generateCodeChallenge(code_verifier).then((res) => {
-        window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${client_id}&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8080&response_mode=query&scope=openid%20user.read%20offline_access%20Contacts.ReadWrite%20Calendars.ReadWrite&state=1234&code_challenge=${res}&code_challenge_method=S256`
+        window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${client_id}&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fhome&response_mode=query&scope=openid%20user.read%20offline_access%20Contacts.ReadWrite%20Calendars.ReadWrite&state=1234&code_challenge=${res}&code_challenge_method=S256`
       })
       // redirect to login
     },
@@ -300,6 +320,7 @@ export default {
         this.eventId = attr.id
         this.isShowEvent = true
         this.isShowEventGoogle = true
+        this.isCreateEventGoogle = true
         this.isShowEventMicrosoft = false
         this.isCreateEvent = true
       }
@@ -313,6 +334,7 @@ export default {
         this.isShowEvent = true
         this.isShowEventGoogle = false
         this.isShowEventMicrosoft = true
+        this.isCreateEventMicrosoft = true
         this.isCreateEvent = true
       }
     },
@@ -335,22 +357,34 @@ export default {
     _inviteCreateEvent(email = null) {
       this.eventAttendees.push(email)
       this.isCreateEvent = true
+      this.isCreateEventGoogle = true
     },
     inviteCreateEvent(listEmail) {
       this.eventAttendees = listEmail
       this.isCreateEvent = true
+      this.isCreateEventGoogle = true
     },
     async deleteEvent() {
-      if(this.isShowEventGoogle){
+      if (this.isShowEventGoogle) {
         await this.deleteEventIdGoogle({
           access_token: this.tokenGoogle,
           calendarId: this.getBasicProfile().google.email,
           eventId: this.eventId,
         })
+        if (this.eventAttendees.length > 0) {
+          this.eventAttendees.forEach((receiver) => {
+            this.$socket.emit('sendNotification', {
+              userId: 1,
+              receiver: receiver,
+              title: 'inform',
+              content: 'canceled a event',
+            })
+          })
+        }
         this.clearEvent()
         await this.getEventGoogle({ access_token: this.tokenGoogle, calendarId: this.getBasicProfile().google.email })
       }
-      if(this.isShowEventMicrosoft){
+      if (this.isShowEventMicrosoft) {
         const res = await this.getAccessToken({
           service: 'microsoft',
           username: this.$store.state.userDefaults,
@@ -382,11 +416,38 @@ export default {
             summary: this.eventTitle,
             description: this.eventDescription,
           },
+          sendUpdates: this.sendUpdates,
         }
         if (this.isShowEventGoogle) {
           await this.updateEventIdGoogle(payload)
         } else {
           await this.createEventGoogle(payload)
+          if (this.eventAttendees.length > 0) {
+            this.eventAttendees.forEach((receiver) => {
+              this.$socket.emit('sendNotification', {
+                userId: this.$store.state.userId,
+                receiver: receiver,
+                title: 'invited',
+                content: 'join a new event',
+              })
+            })
+          }
+        }
+        if (this.isSMS && this.eventAttendees.length > 0) {
+          const contacts = this.getContact().google
+          const oz = this.getBasicProfile().google.email
+          this.eventAttendees.forEach((email) => {
+            const person = contacts.find((contact) => contact.email == email)
+            if (person.phone) {
+              let phone = person.phone.split(/[\s-]+/g).join('')
+              phone = phone.split('')
+              if (phone[0] == 0) phone[0] = '+84'
+              this.sendSMS({
+                to: phone.join(''),
+                message: `Google Calendar: You received an event invitation from ${oz}`,
+              })
+            }
+          })
         }
         this.clearEvent()
         await this.getEventGoogle({ access_token: this.tokenGoogle, calendarId: this.getBasicProfile().google.email })
@@ -401,17 +462,19 @@ export default {
           data: {
             start: {
               dateTime: this.dateTimeStart + ':00+07:00',
-              timeZone: "Asia/Ho_Chi_Minh"
+              timeZone: 'Asia/Ho_Chi_Minh',
             },
             end: {
               dateTime: this.dateTimeEnd + ':00+07:00',
-              timeZone: "Asia/Ho_Chi_Minh"
+              timeZone: 'Asia/Ho_Chi_Minh',
             },
             attendees: this.eventAttendees.map((attendee) => {
-              return { emailAddress: {
-                address: attendee
-              },
-              type: 'Required'}
+              return {
+                emailAddress: {
+                  address: attendee,
+                },
+                type: 'Required',
+              }
             }),
             subject: this.eventTitle,
             body: {
@@ -420,12 +483,30 @@ export default {
             },
           },
         }
-        if(this.isShowEventMicrosoft) await this.updateEventIdMicrosoft(payload)
+        if (this.isShowEventMicrosoft) await this.updateEventIdMicrosoft(payload)
         else await this.createEventMicrosoft(payload)
         this.clearEvent()
-        await this.getEventMicrosoft({ access_token: res.token})
+        await this.getEventMicrosoft({ access_token: res.token })
       }
     },
+  },
+  mounted() {
+    this.sockets.subscribe('receiveNotification', function (val) {
+      this.$store.dispatch('updateSilentLoading', true)
+      this.getListNotification({
+        username: this.$store.state.userDefaults,
+        limit: 10,
+      })
+      this.$store.dispatch('updateSilentLoading', false)
+      if (Notification.permission === 'granted') {
+        const options = {
+          body: val.message,
+          dir: 'ltr',
+          silent: true,
+        }
+        new Notification(val.title + ' you', options)
+      }
+    })
   },
   async created() {
     if (this.$route.query.code) {
@@ -436,59 +517,56 @@ export default {
           grant_type: 'authorization_code',
           scope: 'openid offline_access Contacts.ReadWrite Calendars.ReadWrite',
           code_verifier: localStorage.getItem('code_verifier'),
-          redirect_uri: 'http://localhost:8080',
+          redirect_uri: 'http://localhost:8080/home',
           client_id: '0c594404-673a-4379-8c97-becedf7720e2',
         },
       }
       await this.requestTokenMicrosoft(payload).then((res) => {
-        console.log(res)
         this.createConnect({
           service_code: 'microsoft',
-          username: this.$store.state.userDefaults,
           token: res.access_token,
         }).then(() => {
           localStorage.removeItem('code_verifier')
         })
       })
-      this.$router.push('/')
-      this.listConnection = await this.getListConnection({ username: this.$store.state.userDefaults })
+      this.$router.push('/home')
+      this.listConnection = await this.getListConnection()
     }
-    if (this.$route.fullPath.search('/?code=') != -1) {
-      const authCode = this.$route.fullPath.split('=')[1].split('&')[0]
+    if (localStorage.getItem('token')) {
       const payload = {
-        data: {
-          app_id: '4214073985369805352',
-          code: authCode,
-          code_verifier: localStorage.getItem('code_verifier'),
-          grant_type: 'authorization_code',
-        },
-        secret_key: 'I9ROOOR8VGjWKcJs07rG',
-      }
-      await this.requestToken(payload).then((res) => {
-        console.log(res)
-        this.createConnect({
-          service_code: 'zalo',
-          username: this.$store.state.userDefaults,
-          token: res.access_token,
-        }).then(() => {
-          localStorage.removeItem('code_verifier')
-        })
-      })
-      this.$router.push('/')
-      this.listConnection = await this.getListConnection({ username: this.$store.state.userDefaults })
-    }
-    if (this.$store.state.userDefaults) {
-      const data = {
         service: 'google',
-        username: this.$store.state.userDefaults,
       }
-      this.listConnection = await this.getListConnection(data)
-      const resToken = await this.getAccessToken(data)
+      await this.getProfile()
+      this.listConnection = await this.getListConnection()
+      await this.getListNotification()
+      const resToken = await this.getAccessToken(payload)
       this.tokenGoogle = resToken.token
     } else {
       this.$router.push('/login')
     }
+    // if (this.$route.fullPath.search('/?code=') != -1) {
+    //   const authCode = this.$route.fullPath.split('=')[1].split('&')[0]
+    //   const payload = {
+    //     data: {
+    //       app_id: '4214073985369805352',
+    //       code: authCode,
+    //       code_verifier: localStorage.getItem('code_verifier'),
+    //       grant_type: 'authorization_code',
+    //     },
+    //     secret_key: 'I9ROOOR8VGjWKcJs07rG',
+    //   }
+    //   await this.requestToken(payload).then((res) => {
+    //     console.log(res)
+    //     this.createConnect({
+    //       service_code: 'zalo',
+    //       token: res.access_token,
+    //     }).then(() => {
+    //       localStorage.removeItem('code_verifier')
+    //     })
+    //   })
+    //   this.$router.push('/')
+    //   this.listConnection = await this.getListConnection()
+    // }
   },
 }
 </script>
-<style></style>
